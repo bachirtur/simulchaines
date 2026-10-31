@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulation des listes chaînées</title>
+<style>
+:root{--bg:#f4f7fb;--panel:#fff;--text:#1b2a41;--muted:#4a5b75;--title:#0d47a1;--bd:#cfd8e6;--blue:#1565c0;--orange:#e65100;--green:#2e7d32;--cell:#e3f0ff;--val:#fff;--act:#ffe08a;--actp:#fff3c4;--null:#eceff1;--nulltx:#455a64;--expl:#fffbe6;--explbd:#f9a825;--err:#ffebee;--errtx:#b71c1c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0f1722;--panel:#18222f;--text:#e6edf6;--muted:#9fb0c8;--title:#82b1ff;--bd:#2c3b50;--blue:#64a8ff;--orange:#ff9a55;--green:#6fcf76;--cell:#1d3350;--val:#101a26;--act:#6b5200;--actp:#5a4500;--null:#243142;--nulltx:#b8c6da;--expl:#2a2610;--explbd:#f9a825;--err:#3a1518;--errtx:#ff9e9e}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0f1722;--panel:#18222f;--text:#e6edf6;--muted:#9fb0c8;--title:#82b1ff;--bd:#2c3b50;--blue:#64a8ff;--orange:#ff9a55;--green:#6fcf76;--cell:#1d3350;--val:#101a26;--act:#6b5200;--actp:#5a4500;--null:#243142;--nulltx:#b8c6da;--expl:#2a2610;--explbd:#f9a825;--err:#3a1518;--errtx:#ff9e9e}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;line-height:1.35;padding:14px}
+main{max-width:1000px;margin:0 auto}
+h1{margin:0 0 4px;font-size:24px;color:var(--title)}
+h2{margin:0 0 8px;font-size:16px;color:var(--title)}
+.sub{margin:0 0 12px;color:var(--muted);font-size:14px}
+.panel{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+label{font-size:13px;font-weight:bold}
+select,input{padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:14px;background:var(--val);color:var(--text)}
+input.s{width:72px}input.m{width:170px}
+button{padding:7px 12px;border:none;border-radius:6px;background:#1565c0;color:#fff;font-size:14px;cursor:pointer}
+button.g{background:#2e7d32}button.o{background:#ef6c00}button.r{background:#c62828}button.x{background:#546e7a}
+.zone{background:var(--panel);border:2px dashed var(--bd);border-radius:10px;padding:14px 10px;min-height:200px;overflow-x:auto;margin-bottom:8px}
+.list{display:flex;flex-wrap:wrap;gap:14px 6px;align-items:flex-start}
+.group{display:flex;flex-wrap:nowrap;align-items:flex-start}
+.col{display:flex;flex-direction:column;align-items:center;flex:none}
+.headlab{height:40px;width:100%;text-align:center;font-weight:bold;color:var(--green);font-size:14px;line-height:1.1}
+.hid{visibility:hidden}
+.cell{display:flex;height:84px;border:3px solid var(--blue);border-radius:8px;background:var(--cell);overflow:hidden}
+.cell.act{background:var(--act);border-color:var(--orange);box-shadow:0 0 0 3px rgba(230,81,0,.35)}
+.val{width:66px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;background:var(--val);border-right:2px solid var(--blue);overflow:hidden}
+.ptr{width:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;text-align:center}
+.ptr b{display:block;font-size:15px}
+.pp{border-right:2px solid var(--blue);color:var(--orange)}
+.pn{color:var(--blue)}
+.ptr b.nl{color:var(--muted)}
+.act .ptr{background:var(--actp)}
+.idx{margin-top:6px;font-size:13px;font-weight:bold}
+.arr{display:block;margin-top:40px;flex:none}
+.arr .ln{stroke-width:4}
+.arr .nl{stroke:var(--blue)}.arr .nf{fill:var(--blue)}
+.arr .pl{stroke:var(--orange)}.arr .pf{fill:var(--orange)}
+.null{margin-top:40px;height:84px;width:70px;display:flex;align-items:center;justify-content:center;border:3px solid var(--nulltx);border-radius:8px;background:var(--null);color:var(--nulltx);font-weight:bold;font-size:15px;flex:none}
+.headbox{margin-top:40px;height:84px;width:70px;display:flex;align-items:center;justify-content:center;border:3px solid var(--green);border-radius:8px;color:var(--green);font-weight:bold;flex:none}
+.legend{font-size:13px;color:var(--muted);margin-bottom:12px}
+.expl{background:var(--expl);border-left:6px solid var(--explbd);padding:10px 12px;border-radius:6px;font-size:15px;min-height:50px;margin-bottom:12px}
+.expl.err{background:var(--err);border-left-color:#c62828;color:var(--errtx)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--bd);padding:6px 8px;text-align:center}
+th{background:#1565c0;color:#fff}
+@media (max-width:600px){h1{font-size:19px}button{padding:6px 9px;font-size:13px}input.m{width:130px}}
+</style>
+</head>
+<body>
+<main>
+<h1>Simulation interactive : listes chaînées</h1>
+<p class="sub">Choisissez un type de liste, parcourez-la cellule par cellule et modifiez-la pour comprendre le rôle des pointeurs.</p>
+<noscript><p class="expl err">JavaScript doit être activé pour utiliser cette simulation.</p></noscript>
+
+<section class="panel">
+<h2>1. Configuration</h2>
+<div class="row">
+<label for="type">Type de liste :</label>
+<select id="type"><option value="simple">Simplement chaînée</option><option value="double">Doublement chaînée</option></select>
+<label for="count">Nombre de cellules :</label>
+<input class="s" id="count" type="number" min="1" max="12" value="5">
+<label for="vals">Valeurs initiales :</label>
+<input class="m" id="vals" type="text" value="10,20,30,40,50">
+<button type="button" class="g" data-act="create">Créer la liste</button>
+</div>
+</section>
+
+<section class="panel">
+<h2>2. Parcours de la liste</h2>
+<div class="row">
+<button type="button" data-act="first">⏮ Première</button>
+<button type="button" data-act="prev">◀ Reculer</button>
+<button type="button" data-act="next">Avancer ▶</button>
+<button type="button" data-act="last">Dernière ⏭</button>
+<button type="button" class="g" data-act="play">▶▶ Lecture auto</button>
+<button type="button" class="o" data-act="pause">⏸ Pause</button>
+<button type="button" class="r" data-act="stop">⏹ Arrêt</button>
+<button type="button" class="x" data-act="reset">↺ Réinitialiser</button>
+</div>
+</section>
+
+<section class="panel">
+<h2>3. Modifier la liste</h2>
+<div class="row">
+<label for="val">Valeur :</label>
+<input class="s" id="val" type="text" maxlength="6" placeholder="ex : 42">
+<label for="pos">Position (0 = tête) :</label>
+<input class="s" id="pos" type="number" min="0" max="12" placeholder="0">
+<button type="button" data-act="add">＋ Ajouter à la fin</button>
+<button type="button" data-act="ins">⤵ Insérer à la position</button>
+<button type="button" class="r" data-act="del">✖ Supprimer</button>
+<button type="button" class="o" data-act="mod">✎ Modifier la valeur</button>
+</div>
+</section>
+
+<div class="zone"><div class="list" id="list"></div></div>
+<div class="legend">
+<b style="color:var(--blue)">Bleu</b> : pointeur Suivant &nbsp;|&nbsp;
+<b style="color:var(--orange)">Orange</b> : pointeur Précédent &nbsp;|&nbsp;
+<b style="color:var(--green)">Vert</b> : HEAD &nbsp;|&nbsp;
+<b>Jaune</b> : cellule parcourue
+</div>
+<div class="expl" id="expl">HEAD pointe vers la première cellule (cellule 0, valeur 10).</div>
+
+<section class="panel">
+<h2>Comparaison des deux structures</h2>
+<div class="tw"><table>
+<tr><th>Caractéristique</th><th>Simplement chaînée</th><th>Doublement chaînée</th></tr>
+<tr><td>Pointeur suivant</td><td>Oui</td><td>Oui</td></tr>
+<tr><td>Pointeur précédent</td><td>Non</td><td>Oui</td></tr>
+<tr><td>Parcours avant</td><td>Oui</td><td>Oui</td></tr>
+<tr><td>Parcours arrière</td><td>Non</td><td>Oui</td></tr>
+<tr><td>Pointeurs par cellule</td><td>1</td><td>2</td></tr>
+</table></div>
+</section>
+</main>
+
+<script>
+(function(){
+var S={d:false,vals:["10","20","30","40","50"],cur:0,timer:null};
+var NULLBOX='<div class="null">NULL</div>';
+function g(id){return document.getElementById(id);}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function nx(y){return '<line class="ln nl" x1="2" y1="'+y+'" x2="44" y2="'+y+'"/><polygon class="nf" points="44,'+(y-8)+' 54,'+y+' 44,'+(y+8)+'"/>';}
+function pv(y){return '<line class="ln pl" x1="52" y1="'+y+'" x2="10" y2="'+y+'"/><polygon class="pf" points="10,'+(y-8)+' 0,'+y+' 10,'+(y+8)+'"/>';}
+function arrow(kind,d){
+var s='<svg class="arr" width="54" height="84" viewBox="0 0 54 84" xmlns="http://www.w3.org/2000/svg">';
+if(!d){s+=nx(42);}else{if(kind.indexOf("n")>=0){s+=nx(28);}if(kind.indexOf("p")>=0){s+=pv(58);}}
+return s+'</svg>';}
+function cell(i,n){
+var h='<div class="col"><div class="headlab'+(i===0?"":" hid")+'">HEAD<br>▼</div>';
+h+='<div class="cell'+(i===S.cur?" act":"")+'">';
+if(S.d){h+='<div class="ptr pp"><span>Précédent</span>'+(i>0?'<b>← '+(i-1)+'</b>':'<b class="nl">NULL</b>')+'</div>';}
+h+='<div class="val">'+esc(S.vals[i])+'</div>';
+h+='<div class="ptr pn"><span>Suivant</span>'+(i<n-1?'<b>→ '+(i+1)+'</b>':'<b class="nl">NULL</b>')+'</div></div>';
+return h+'<div class="idx">Cellule '+i+'</div></div>';}
+function render(){
+var n=S.vals.length,h="",i,grp;
+if(n===0){h='<div class="group"><div class="headbox">HEAD</div>'+arrow("n",false)+NULLBOX+'</div>';}
+for(i=0;i<n;i++){grp="";
+if(i===0&&S.d){grp+=NULLBOX+arrow("p",true);}
+if(i>0){grp+=arrow("np",S.d);}
+grp+=cell(i,n);
+if(i===n-1){grp+=arrow("n",S.d)+NULLBOX;}
+h+='<div class="group">'+grp+'</div>';}
+g("list").innerHTML=h;}
+function say(m,err){var e=g("expl");e.textContent=m;e.className="expl"+(err?" err":"");}
+function stopTimer(){if(S.timer!==null){clearInterval(S.timer);S.timer=null;}}
+function describe(i,how){
+var n=S.vals.length,v=S.vals[i],m="";
+if(how==="back"){
+m=S.d?"Le pointeur Précédent de la cellule "+(i+1)+" permet de revenir vers la cellule "+i+" (valeur "+v+")."
+:"Liste simplement chaînée : il n’y a pas de pointeur Précédent ! Pour atteindre la cellule "+i+" (valeur "+v+"), on repart de HEAD et on suit "+i+" fois le pointeur Suivant.";
+}else if(how==="last"){m="Pour atteindre la dernière cellule (valeur "+v+"), on part de HEAD et on suit "+(n-1)+" fois le pointeur Suivant.";}
+else if(i===0){m="HEAD pointe vers la première cellule (cellule 0, valeur "+v+").";}
+else{m="Le pointeur Suivant de la cellule "+(i-1)+" mène à la cellule "+i+" (valeur "+v+").";}
+if(i===n-1){m+=" Le pointeur Suivant de la dernière cellule vaut NULL : c’est la fin de la liste.";}
+if(i===0&&S.d){m+=" Le pointeur Précédent de la première cellule vaut NULL.";}
+return m;}
+function go(i,how){if(S.vals.length===0){say("La liste est vide : HEAD vaut NULL.");return;}S.cur=i;render();say(describe(i,how));}
+function cleanVal(req){var v=g("val").value.trim();if(v===""){if(req){return null;}v=String(Math.floor(Math.random()*90)+10);}return v.slice(0,6);}
+function readPos(min,max,def){var s=g("pos").value.trim();if(s===""){return def;}var p=Number(s);if(!isFinite(p)||p%1!==0||p<min||p>max){return null;}return p;}
+function doCreate(){
+stopTimer();
+var c=Number(g("count").value);
+if(!isFinite(c)||c%1!==0||c<1||c>12){say("Le nombre de cellules doit être un entier entre 1 et 12.",true);return;}
+var raw=g("vals").value.split(","),parsed=[],out=[],i,t;
+for(i=0;i<raw.length;i++){t=raw[i].trim();if(t!==""){parsed.push(t.slice(0,6));}}
+for(i=0;i<c;i++){out.push(i<parsed.length?parsed[i]:String(10*(i+1)));}
+S.vals=out;S.cur=0;render();
+say("Liste créée avec "+c+" cellule(s). HEAD pointe vers la cellule 0 (valeur "+out[0]+").");}
+function doAdd(){
+stopTimer();var n=S.vals.length;
+if(n>=12){say("Limite atteinte : 12 cellules maximum.",true);return;}
+var v=cleanVal(false);S.vals.push(v);S.cur=n;render();var m;
+if(n===0){m="La liste était vide : HEAD pointe maintenant vers la nouvelle cellule 0 (valeur "+v+"), dont le pointeur Suivant vaut NULL.";}
+else{m="On parcourt la liste depuis HEAD jusqu’à la dernière cellule. Son pointeur Suivant (qui valait NULL) pointe maintenant vers la nouvelle cellule "+n+" (valeur "+v+"), dont le Suivant vaut NULL.";
+if(S.d){m+=" Le pointeur Précédent de la nouvelle cellule pointe vers la cellule "+(n-1)+".";}}
+say(m);}
+function doIns(){
+stopTimer();var n=S.vals.length;
+if(n>=12){say("Limite atteinte : 12 cellules maximum.",true);return;}
+var p=readPos(0,n,-1);
+if(p===null||p===-1){say("Position invalide : indiquez un entier entre 0 et "+n+".",true);return;}
+var v=cleanVal(false);S.vals.splice(p,0,v);S.cur=p;render();var m;
+if(n===0){m="La liste était vide : HEAD pointe maintenant vers la nouvelle cellule 0 (valeur "+v+"), dont le Suivant vaut NULL.";}
+else if(p===0){m="Insertion en tête : la nouvelle cellule 0 (valeur "+v+") reçoit comme Suivant l’ancienne première cellule (devenue cellule 1), puis HEAD pointe vers la nouvelle cellule.";
+if(S.d){m+=" Le Précédent de l’ancienne première cellule pointe vers la nouvelle ; le Précédent de la nouvelle vaut NULL.";}}
+else if(p===n){m="Insertion à la fin : le Suivant de la cellule "+(p-1)+" pointe vers la nouvelle cellule "+p+" (valeur "+v+"), dont le Suivant vaut NULL.";
+if(S.d){m+=" Son Précédent pointe vers la cellule "+(p-1)+".";}}
+else{m="Insertion en position "+p+" (valeur "+v+") : on parcourt la liste jusqu’à la cellule "+(p-1)+". La nouvelle cellule reçoit comme Suivant l’ancienne cellule "+p+" (devenue "+(p+1)+"), puis le Suivant de la cellule "+(p-1)+" pointe vers la nouvelle cellule.";
+if(S.d){m+=" Les pointeurs Précédent sont mis à jour : celui de la nouvelle cellule vise "+(p-1)+", celui de la cellule "+(p+1)+" vise la nouvelle.";}}
+say(m);}
+function doDel(){
+stopTimer();var n=S.vals.length;
+if(n===0){say("La liste est vide : il n’y a rien à supprimer.",true);return;}
+var p=readPos(0,n-1,n-1);
+if(p===null){say("Position invalide : indiquez un entier entre 0 et "+(n-1)+".",true);return;}
+var old=S.vals.splice(p,1)[0],nn=S.vals.length;
+S.cur=nn===0?0:Math.min(p,nn-1);render();var m;
+if(nn===0){m="La cellule "+p+" (valeur "+old+") est supprimée. La liste est maintenant vide : HEAD vaut NULL.";}
+else if(p===0){m="Suppression de la tête (valeur "+old+") : HEAD pointe désormais vers l’ancienne cellule 1 (devenue cellule 0).";
+if(S.d){m+=" Son pointeur Précédent vaut maintenant NULL.";}}
+else if(p===n-1){m="Suppression de la dernière cellule (valeur "+old+") : le Suivant de la cellule "+(p-1)+" prend la valeur NULL.";}
+else{m="Suppression de la cellule "+p+" (valeur "+old+") : le Suivant de la cellule "+(p-1)+" pointe vers la cellule suivante (devenue "+p+"). La cellule supprimée n’est plus accessible.";
+if(S.d){m+=" Le Précédent de la cellule suivante pointe vers la cellule "+(p-1)+".";}}
+say(m);}
+function doMod(){
+stopTimer();var n=S.vals.length;
+if(n===0){say("La liste est vide : il n’y a rien à modifier.",true);return;}
+var p=readPos(0,n-1,-1);
+if(p===null||p===-1){say("Position invalide : indiquez un entier entre 0 et "+(n-1)+".",true);return;}
+var v=cleanVal(true);
+if(v===null){say("Saisissez la nouvelle valeur dans le champ « Valeur ».",true);return;}
+var old=S.vals[p];S.vals[p]=v;S.cur=p;render();
+say("La valeur de la cellule "+p+" passe de "+old+" à "+v+". Les pointeurs ne changent pas : seule la valeur est modifiée.");}
+function doReset(){
+stopTimer();S.d=false;S.vals=["10","20","30","40","50"];S.cur=0;
+g("type").value="simple";g("count").value="5";g("vals").value="10,20,30,40,50";g("val").value="";g("pos").value="";
+render();say("Simulation réinitialisée : liste simplement chaînée de 5 cellules. HEAD pointe vers la cellule 0.");}
+function doPlay(){
+var n=S.vals.length;
+if(n===0){say("La liste est vide : HEAD vaut NULL.",true);return;}
+if(S.timer!==null){return;}
+if(S.cur>=n-1){go(0,"first");}else{say("Lecture automatique en cours…");}
+S.timer=setInterval(function(){
+if(S.cur<S.vals.length-1){go(S.cur+1,"next");}
+else{stopTimer();say("Parcours terminé : le pointeur Suivant de la dernière cellule vaut NULL, la lecture s’arrête.");}
+},1200);}
+function act(a){
+var n=S.vals.length;
+if(a==="first"){stopTimer();go(0,"first");}
+else if(a==="last"){stopTimer();go(n-1,"last");}
+else if(a==="next"){stopTimer();
+if(n===0){say("La liste est vide : HEAD vaut NULL.",true);}
+else if(S.cur<n-1){go(S.cur+1,"next");}
+else{say("Vous êtes sur la dernière cellule : son pointeur Suivant vaut NULL, impossible d’avancer.");}}
+else if(a==="prev"){stopTimer();
+if(n===0){say("La liste est vide : HEAD vaut NULL.",true);}
+else if(S.cur>0){go(S.cur-1,"back");}
+else{say("Vous êtes sur la première cellule : HEAD pointe ici, on ne peut pas reculer."+(S.d?" Son pointeur Précédent vaut NULL.":""));}}
+else if(a==="play"){doPlay();}
+else if(a==="pause"){stopTimer();say("Lecture en pause sur la cellule "+S.cur+". Cliquez sur « Lecture auto » pour reprendre.");}
+else if(a==="stop"){stopTimer();if(n>0){S.cur=0;render();}say("Arrêt : retour à HEAD, première cellule de la liste.");}
+else if(a==="reset"){doReset();}
+else if(a==="create"){doCreate();}
+else if(a==="add"){doAdd();}
+else if(a==="ins"){doIns();}
+else if(a==="del"){doDel();}
+else if(a==="mod"){doMod();}
+else if(a==="type"){stopTimer();S.d=(g("type").value==="double");render();
+say(S.d?"Liste doublement chaînée : chaque cellule possède un pointeur Suivant (bleu) et un pointeur Précédent (orange). Les deux extrémités pointent vers NULL."
+:"Liste simplement chaînée : chaque cellule ne possède qu’un pointeur Suivant (bleu). Le Suivant de la dernière cellule vaut NULL.");}
+}
+document.addEventListener("click",function(e){
+var b=e.target.closest?e.target.closest("[data-act]"):null;
+if(b){act(b.getAttribute("data-act"));}
+});
+g("type").addEventListener("change",function(){act("type");});
+g("count").addEventListener("change",function(){act("create");});
+render();
+})();
+</script>
+</body>
+</html>
